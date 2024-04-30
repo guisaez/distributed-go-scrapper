@@ -1,1 +1,1 @@
-# distributed-go-scrapper
+# distributed-go-web-scrapper
