@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -23,9 +24,13 @@ type VisitRequest struct {
 func NewVisitRequest(links []string) VisitRequest {
 	return VisitRequest{
 		links: links,
-		visitFunc: func(r io.Reader) error {
+		visitFunc: func(r io.Reader) error { // Define any additional logic to the function here. 
 			fmt.Println("========================")
-			fmt.Println("doing visitfunc over the body ")
+			b, err := io.ReadAll(r)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(b))
 			fmt.Println("========================")
 			return nil
 		},
@@ -105,11 +110,14 @@ func(v *Visitor) doVisit(link string, visit VisitFunc) ([]string, error) {
 		return []string{}, err
 	}
 
-	if err := visit(resp.Body); err != nil {
+	w := &bytes.Buffer{}
+	r := io.TeeReader(resp.Body, w) // returs a Reader that writes into w
+	
+	if err := visit(r); err != nil {
 		return []string{}, err
 	}
 
-	links, err := v.extractLinks(resp.Body)
+	links, err := v.extractLinks(w)
 	if err != nil {
 		return []string{}, err
 	}
